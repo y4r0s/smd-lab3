@@ -110,6 +110,13 @@ class TableColumn(Base):
     table: Mapped["Table"] = relationship(back_populates="columns")
 
 
+DIFF_COLORS: dict[str, str] = {
+    "ADDED": "green",
+    "REMOVED": "red",
+    "MODIFIED": "yellow",
+}
+
+
 class Diff(Base):
     """Одно выявленное различие — класс Diff (ЛР № 2), тип определяет подсветку (Т2)."""
 
@@ -126,6 +133,12 @@ class Diff(Base):
     details: Mapped[dict | None] = mapped_column(JSON, default=None)
 
     comparison: Mapped["Comparison"] = relationship(back_populates="diffs")
+
+    @property
+    def color(self) -> str:
+        """Цвет подсветки различия (Т2): зелёный — добавлено, красный — удалено,
+        жёлтый — изменено."""
+        return DIFF_COLORS.get(self.diff_type, "gray")
 
 
 class Migration(Base):

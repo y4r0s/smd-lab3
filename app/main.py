@@ -9,6 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from .database import Base, engine, get_db
+from .routes import comparisons, migrations, projects
 
 
 @asynccontextmanager
@@ -34,8 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 12 конечных точек: 5 CRUD проектов, 3 сравнения (включая /validate),
+# 3 миграции (включая /export), 1 healthcheck.
+app.include_router(projects.router, prefix="/api")
+app.include_router(comparisons.router, prefix="/api")
+app.include_router(migrations.router, prefix="/api")
 
-@app.get("/api/health", response_model=None, tags=["health"])
+
+@app.get("/api/health", tags=["health"])
 def health(db: Session = Depends(get_db)) -> JSONResponse:
     """Проверка работоспособности: доступность приложения и БД (для healthcheck)."""
     try:
@@ -44,4 +51,6 @@ def health(db: Session = Depends(get_db)) -> JSONResponse:
     except Exception:  # noqa: BLE001 - healthcheck обязан пережить недоступность БД
         database_status = "unavailable"
     status_code = 200 if database_status == "ok" else 503
-    return JSONResponse(status_code=status_code, content={"status": "ok", "database": database_status})
+    return JSONResponse(
+        status_code=status_code, content={"status": "ok", "database": database_status}
+    )
